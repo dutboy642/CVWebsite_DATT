@@ -1,58 +1,34 @@
-import ReactQuill from 'react-quill';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import 'react-quill/dist/quill.bubble.css';
-
-
-interface ComponentInstance {
-    id: string;
-    position: { x: number; y: number };
-    size: { width: number; height: number };
-}
-
+import { ComponentInstance } from '@/types';
+import FrameComponent from '@/Components/FrameComponent';
+import { position } from '@/types';
+import TextComponent from '@/Components/TextComponent';
+import { TextComponentInstance } from '@/types';
 
 export default function CVEditor() {
-    const [editorValue, setEditorValue] = useState('');
-    // document.addEventListener("DOMContentLoaded", function () {
-    //     const quill = new Quill('#editor', {
-    //         theme: 'snow'
-    //     });
-    // });
     const [instances, setInstances] = useState<ComponentInstance[]>([]);// framecomponent
-    const [textInstances, setTextInstances] = useState<ComponentInstance[]>([]);// textcomponent
-
+    const [textInstances, setTextInstances] = useState<TextComponentInstance[]>([]);// textcomponent
     const [nextId, setNextId] = useState(1); //framecomponent
     const [nextTextId, setNextTextId] = useState(1); //textcomponent
-
     // State để lưu trữ kích thước và vị trí của component
     const frameComponentPosition = { x: 10, y: 10 };
     const frameComponentSize = { width: 100, height: 50 };
-
     const textComponentPosition = { x: 10, y: 210 };
-    const textComponentSize = { width: 100, height: 50 };
-
+    const textComponentSize = { width: 150, height: 40 };
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [SizeStart, setSizeStart] = useState({ width: 0, height: 0 });
-
-    // const [resizeDirection, setResizeDirection] = useState("");
-    let resizeDirection = ""
     const [currentClassesComponent, setCurrentClassesComponent] = useState("");
-    const [currentIDComponent, setCurrentIDComponent] = useState("");
-    // const [currentIdComponent, setCurrentClassesComponent] = useState("");
 
-    const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
-        event.dataTransfer.setData("text/plain", "component");
-        event.dataTransfer.setData("Id", (event.target as HTMLDivElement).id);
-        // event.dataTransfer.setData("Id", event.target);
-        setCurrentClassesComponent((event.target as HTMLDivElement).getAttribute("class") || "");
-        setDragStart({ x: event.clientX, y: event.clientY });
-    };
+    const setCurrentClassesComponentFunction = (x: string) => {
+        setCurrentClassesComponent(x);
+    }
+    const setDragStartFunction = (x: position) => {
+        setDragStart(x);
+    }
 
-    // Function để xử lý sự kiện thả component
-
-    const updateInstance = (idToUpdate: string, updatedInstance: ComponentInstance, instancesArray: ComponentInstance[], type: string) => {
+    const updateInstance = (idToUpdate: string, updatedInstance: ComponentInstance) => {
         // Sao chép mảng state hiện tại
-        const updatedInstances = [...instancesArray];
-
+        const updatedInstances = [...instances];
         // Tìm phần tử cần sửa đổi trong mảng sao chép
         const indexToUpdate = updatedInstances.findIndex(instance => instance.id === idToUpdate);
 
@@ -60,29 +36,30 @@ export default function CVEditor() {
         if (indexToUpdate !== -1) {
             // Thực hiện sửa đổi trên phần tử mong muốn
             updatedInstances[indexToUpdate] = updatedInstance;
-
             // Cập nhật state với mảng mới đã sửa đổi
-            if (type == 'text') {
-                setTextInstances(updatedInstances);
-            }
-            else {
-                setInstances(updatedInstances);
-            }
+            setInstances(updatedInstances);
         } else {
             console.log('Không tìm thấy phần tử cần sửa đổi.');
         }
     };
+    const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+
+        event.dataTransfer.setData("text/plain", "component");
+        event.dataTransfer.setData("Id", (event.target as HTMLDivElement).id);
+        setCurrentClassesComponent((event.target as HTMLDivElement).getAttribute("class") || "");
+        setDragStart({ x: event.clientX, y: event.clientY });
+    };
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
         console.log(currentClassesComponent.includes('mainComponent'))
-
         event.preventDefault();
-        // console.log(currentClassesComponent)
         if (currentClassesComponent.includes('mainComponent')) {
             if (currentClassesComponent.includes('textComponent')) {
-                const newInstance: ComponentInstance = {
+                const newInstance: TextComponentInstance = {
                     id: 'Text' + nextTextId.toString(),
-                    position: { x: textComponentPosition.x + event.clientX - dragStart.x, y: textComponentPosition.y + event.clientY - dragStart.y },
+                    position: { x: textComponentPosition.x + event.clientX - dragStart.x, y: textComponentPosition.y - 56 + event.clientY - dragStart.y },
                     size: { width: textComponentSize.width, height: textComponentSize.height },
+                    text: '',
+                    isFocus: false,
                 };
                 setTextInstances([...textInstances, newInstance]);
                 setNextTextId(nextTextId + 1);
@@ -91,8 +68,9 @@ export default function CVEditor() {
             else {
                 const newInstance: ComponentInstance = {
                     id: nextId.toString(),
-                    position: { x: frameComponentPosition.x + event.clientX - dragStart.x, y: frameComponentPosition.y + event.clientY - dragStart.y },
+                    position: { x: frameComponentPosition.x + event.clientX - dragStart.x, y: frameComponentPosition.y + 48 + event.clientY - dragStart.y },
                     size: { width: frameComponentSize.width, height: frameComponentSize.height },
+                    isFocus: false,
                 };
                 setInstances([...instances, newInstance]);
                 setNextId(nextId + 1);
@@ -101,275 +79,107 @@ export default function CVEditor() {
         }
         else {
             if (currentClassesComponent.includes("textComponent")) {
-                // console.log(instances)
-
                 let id = event.dataTransfer.getData("Id");
-                // console.log(id)
                 const newInstance = textInstances.find((instance) => instance.id === id);
                 if (!newInstance) return;
                 const newX = newInstance.position.x + event.clientX - dragStart.x;
                 const newY = newInstance.position.y + event.clientY - dragStart.y;
                 newInstance.position = { x: newX, y: newY };
-                updateInstance(id, newInstance, textInstances, 'text')
-                // setInstances([...instances]);
-                // setPosition({ x: position.x + event.clientX - dragStart.x, y: position.y + event.clientY - dragStart.y });
+                newInstance.isFocus = true;
+                updateTextInstance(id, newInstance)
             }
             else {
-                // console.log(instances)
-
                 let id = event.dataTransfer.getData("Id");
-                // console.log(id)
                 const newInstance = instances.find((instance) => instance.id === id);
                 if (!newInstance) return;
                 const newX = newInstance.position.x + event.clientX - dragStart.x;
                 const newY = newInstance.position.y + event.clientY - dragStart.y;
+                newInstance.isFocus = true;
                 newInstance.position = { x: newX, y: newY };
-                updateInstance(id, newInstance, instances, '')
-                // setInstances([...instances]);
-                // setPosition({ x: position.x + event.clientX - dragStart.x, y: position.y + event.clientY - dragStart.y });
+                updateInstance(id, newInstance)
             }
         }
-
     };
 
-    const handleResizeStart = (event: React.MouseEvent<HTMLDivElement>, direction: string) => {
-        event.preventDefault();
-        event.stopPropagation();
-        // Lưu vị trí chuột khi bắt đầu thay đổi kích thước
-        setDragStart({ x: event.clientX, y: event.clientY });
-        //Tim instance
-        const newInstance = instances.find((instance) => instance.id === (event.target as HTMLDivElement).id.split(direction)[1]);
-        if (!newInstance) return;
-        setSizeStart({ width: newInstance.size.width, height: newInstance.size.height });
-        // setResizeDirection(direction);
-        resizeDirection = direction;
-        setCurrentIDComponent((event.target as HTMLDivElement).id.split(direction)[1])
-        // console.log('id', (event.target as HTMLDivElement).id)
-        window.addEventListener("mousemove", handleResize);
-        window.addEventListener("mouseup", handleResizeEnd);
-    };
+    const updateTextInstance = (idToUpdate: string, updatedInstance: TextComponentInstance) => {
+        // Sao chép mảng state hiện tại
+        const updatedInstances = [...textInstances];
 
-    // Function để thay đổi kích thước
-    const handleResize = (event: MouseEvent) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const newInstance = instances.find((instance) => instance.id === currentIDComponent);
-        console.log(newInstance)
-        if (!newInstance) return;
-        //
-        let newWidth = newInstance.size.width;
-        let newHeight = newInstance.size.height;
-        let newX = newInstance.position.x;
-        let newY = newInstance.position.y;
-        switch (resizeDirection) {
-            case "right":
-                newWidth = SizeStart.width + (event.clientX - dragStart.x);
-                // alert("oke")
-                break;
-            case "bottom":
-                newHeight = SizeStart.height + (event.clientY - dragStart.y);
-
-                break;
-            case "left":
-                newWidth = SizeStart.width - (event.clientX - dragStart.x);
-                // setPosition({ x: position.x - (dragStart.x - event.clientX), y: position.y });
-                newX = newX - (dragStart.x - event.clientX)
-                break;
-            case "top":
-                newHeight = SizeStart.height - (event.clientY - dragStart.y);
-                // setPosition({ x: position.x, y: position.y - (dragStart.y - event.clientY) });
-                newY = newY - (dragStart.y - event.clientY)
-                break;
+        // Tìm phần tử cần sửa đổi trong mảng sao chép
+        const indexToUpdate = updatedInstances.findIndex(instance => instance.id === idToUpdate);
+        // Kiểm tra xem phần tử cần sửa có tồn tại trong mảng không
+        if (indexToUpdate !== -1) {
+            // Thực hiện sửa đổi trên phần tử mong muốn
+            updatedInstances[indexToUpdate] = updatedInstance;
+            setTextInstances(updatedInstances);
+        } else {
+            console.log('Không tìm thấy phần tử cần sửa đổi.');
         }
-        //
-        newInstance.position = { x: newX, y: newY };
-        newInstance.size = { width: newWidth, height: newHeight };
-        updateInstance(currentIDComponent, newInstance)
-        setDragStart({ x: event.clientX, y: event.clientY })
-
-
-        // Tính toán kích thước mới của component dựa trên vị trí mới của chuột
-        // const newWidth = size.width + (resizeDirection.includes("right") ? event.clientX - dragStart.x : dragStart.x - event.clientX);
-        // const newHeight = size.height + (resizeDirection.includes("bottom") ? event.clientY - dragStart.y : dragStart.y - event.clientY);
-
-        // newWidth = size.width + (event.clientX - dragStart.x);
-
-
-
-        // Cập nhật kích thước và vị trí của component
-        // setSize({ width: newWidth, height: newHeight });
-        // setPosition({ x: resizeDirection.includes("right") ? position.x : position.x - (dragStart.x - event.clientX), y: resizeDirection.includes("bottom") ? position.y : position.y - (dragStart.y - event.clientY) });
-
-        // Cập nhật vị trí chuột mới
-        setDragStart({ x: event.clientX, y: event.clientY });
-        return;
     };
-
-    // Function để kết thúc quá trình thay đổi kích thước
-    const handleResizeEnd = () => {
-        // setResizeDirection("");
-        resizeDirection = "";
-        window.removeEventListener("mousemove", handleResize);
-        window.removeEventListener("mouseup", handleResizeEnd);
-    };
-
 
     return (
         <div className="grid grid-cols-4 h-screen">
 
             <div className="bg-gray-300 h-full">1
-                <div
-                    className=" absolute bg-gray-300 border border-gray-500 cursor-move mainComponent frameComponent"
-                    style={{ width: frameComponentSize.width, height: frameComponentSize.height, left: frameComponentPosition.x, top: frameComponentPosition.y }}
-                    draggable="true"
-                    onDragStart={handleDragStart}
-                    onDrop={handleDrop}
-                    onDragOver={(event) => event.preventDefault()}
-                >
-                </div>
-                <div
-                    draggable="true"
-                    className='w-8 h-8 absolute bg-gray-300 border border-gray-500 cursor-move mainComponent textComponent'
-                    style={{ width: textComponentSize.width, height: textComponentSize.height, left: textComponentPosition.x, top: textComponentPosition.y }}
+                <button data-drawer-target="default-sidebar" data-drawer-toggle="default-sidebar" aria-controls="default-sidebar" type="button" className="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+                    <span className="sr-only">Open sidebar</span>
+                    <svg className="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path clipRule="evenodd" fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+                    </svg>
+                </button>
+                <aside id="default-sidebar" className="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
+                    <div className="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+                        <ul className="space-y-2 font-medium">
+                            <li>
+                                <button type="button" className="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-example" data-collapse-toggle="dropdown-example">
+                                    <svg className="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 21">
+                                        <path d="M15 12a1 1 0 0 0 .962-.726l2-7A1 1 0 0 0 17 3H3.77L3.175.745A1 1 0 0 0 2.208 0H1a1 1 0 0 0 0 2h.438l.6 2.255v.019l2 7 .746 2.986A3 3 0 1 0 9 17a2.966 2.966 0 0 0-.184-1h2.368c-.118.32-.18.659-.184 1a3 3 0 1 0 3-3H6.78l-.5-2H15Z" />
+                                    </svg>
+                                    <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">E-commerce</span>
+                                    <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
+                                    </svg>
+                                </button>
+                                <ul id="dropdown-example" className="hidden py-2 space-y-2">
+                                    <li>
+                                        {/* <a href="#" className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Products</a>
+                                         */}
+                                        <div
+                                            className=" bg-gray-300 border border-gray-500 cursor-move mainComponent frameComponent"
+                                            style={{ width: frameComponentSize.width, height: frameComponentSize.height, left: frameComponentPosition.x, top: frameComponentPosition.y }}
+                                            draggable="true"
+                                            onDragStart={handleDragStart}
+                                            onDragOver={(event) => event.preventDefault()}
+                                        >
+                                        </div>
+                                    </li>
+                                    <li>
+                                        {/* <a href="#" className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Billing</a> */}
+                                        <div
+                                            draggable="true"
+                                            className='w-8 h-8 border border-gray-500 cursor-move mainComponent textComponent'
+                                            style={{ width: textComponentSize.width, height: textComponentSize.height, left: textComponentPosition.x, top: textComponentPosition.y }}
 
-                    onDragStart={handleDragStart}
-                    onDrop={handleDrop}
-                    onDragOver={(event) => event.preventDefault()}
-                >
-                    {/* <ReactQuill className='border-2'
-                        value={editorValue}
-                        onChange={(value) => setEditorValue(value)}
-                        // modules={{
-                        //     toolbar: [
-                        //         [{ header: [1, 2, false] }],
-                        //         ['bold', 'italic', 'underline'],
-                        //         ['image', 'code-block']
-                        //     ]
-                        // }}
-                        theme="bubble"
-                    /> */}
-                </div>
+                                            onDragStart={handleDragStart}
+                                            onDrop={handleDrop}
+                                            onDragOver={(event) => event.preventDefault()}
+                                        >
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
             </div>
-            <div className="bg-red-300 h-full col-span-3"
+            <div className="h-full col-span-3 bg-black"
                 onDrop={handleDrop}
                 onDragOver={(event) => event.preventDefault()}>2
                 {instances.map((instance) => (
-                    <div
-                        id={instance.id}
-                        className="absolute bg-gray-300 border border-gray-500 cursor-move"
-                        style={{
-                            width: instance.size.width,
-                            height: instance.size.height,
-                            left: instance.position.x,
-                            top: instance.position.y,
-                        }}
-                        draggable="true"
-                        onDragStart={handleDragStart}
-                    // onDrop={handleDrop}
-                    // onDragOver={(event) => event.preventDefault()}
-
-                    // onDrag={(event) => handleResize(event, instance.id)}
-                    >
-                        <div
-                            id={'left' + instance.id}
-                            className="absolute w-1 h-4 bg-blue-500 cursor-pointer"
-                            style={{ top: "50%", left: "-2px", transform: "translateY(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "left")}
-                            onMouseMove={(e) => resizeDirection === "left" ? handleResize : undefined}
-                            onMouseUp={handleResizeEnd}
-                        />
-                        <div
-                            id={'top' + instance.id}
-                            className="absolute w-4 h-1 bg-blue-500 cursor-pointer"
-                            style={{ top: "-2px", left: "50%", transform: "translateX(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "top")}
-                            onMouseMove={(e) => resizeDirection === "top" ? handleResize : undefined}
-                            onMouseUp={handleResizeEnd}
-                        />
-                        <div
-                            id={'bottom' + instance.id}
-                            className="absolute w-4 h-1 bg-blue-500 cursor-pointer"
-                            style={{ bottom: "-2px", left: "50%", transform: "translateX(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "bottom")}
-                            onMouseMove={(e) => resizeDirection === "bottom" ? handleResize : undefined}
-                            onMouseUp={handleResizeEnd}
-                        />
-                        <div
-                            id={'right' + instance.id}
-                            className="absolute w-1 h-4 bg-blue-500 cursor-pointer"
-                            style={{ top: "50%", right: "-2px", transform: "translateY(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "right")}
-                            onMouseMove={(e) => resizeDirection === "right" ? undefined : {
-                                handleResize
-                            }}
-                            onMouseUp={handleResizeEnd}
-                        />
-                    </div>
+                    <FrameComponent setCurrentClassesComponentFunction={setCurrentClassesComponentFunction} dragStart={dragStart} setDragStart={setDragStartFunction} instance={instance} updateInstance={updateInstance} />
                 ))}
                 {textInstances.map((instance) => (
-                    <div
-                        id={instance.id}
-                        className="absolute bg-gray-300 border border-gray-500 cursor-move textComponent"
-                        style={{
-                            width: instance.size.width,
-                            height: instance.size.height,
-                            left: instance.position.x,
-                            top: instance.position.y,
-                        }}
-                        draggable="true"
-                        onDragStart={handleDragStart}
-                    // onDrop={handleDrop}
-                    // onDragOver={(event) => event.preventDefault()}
-
-                    // onDrag={(event) => handleResize(event, instance.id)}
-                    >
-                        {/* <ReactQuill className='border-2'
-                            value={editorValue}
-                            onChange={(value) => setEditorValue(value)}
-                            // modules={{
-                            //     toolbar: [
-                            //         [{ header: [1, 2, false] }],
-                            //         ['bold', 'italic', 'underline'],
-                            //         ['image', 'code-block']
-                            //     ]
-                            // }}
-                            theme="bubble"
-                        /> */}
-                        <div
-                            id={'left' + instance.id}
-                            className="absolute w-1 h-4 bg-blue-500 cursor-pointer"
-                            style={{ top: "50%", left: "-2px", transform: "translateY(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "left")}
-                            onMouseMove={(e) => resizeDirection === "left" ? handleResize : undefined}
-                            onMouseUp={handleResizeEnd}
-                        />
-                        <div
-                            id={'top' + instance.id}
-                            className="absolute w-4 h-1 bg-blue-500 cursor-pointer"
-                            style={{ top: "-2px", left: "50%", transform: "translateX(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "top")}
-                            onMouseMove={(e) => resizeDirection === "top" ? handleResize : undefined}
-                            onMouseUp={handleResizeEnd}
-                        />
-                        <div
-                            id={'bottom' + instance.id}
-                            className="absolute w-4 h-1 bg-blue-500 cursor-pointer"
-                            style={{ bottom: "-2px", left: "50%", transform: "translateX(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "bottom")}
-                            onMouseMove={(e) => resizeDirection === "bottom" ? handleResize : undefined}
-                            onMouseUp={handleResizeEnd}
-                        />
-                        <div
-                            id={'right' + instance.id}
-                            className="absolute w-1 h-4 bg-blue-500 cursor-pointer"
-                            style={{ top: "50%", right: "-2px", transform: "translateY(-50%)" }}
-                            onMouseDown={(e) => handleResizeStart(e, "right")}
-                            onMouseMove={(e) => resizeDirection === "right" ? undefined : {
-                                handleResize
-                            }}
-                            onMouseUp={handleResizeEnd}
-                        />
-                    </div>
+                    <TextComponent setCurrentClassesComponentFunction={setCurrentClassesComponentFunction} setDragStart={setDragStartFunction} dragStart={dragStart} instance={instance} updateInstance={updateTextInstance} />
                 ))}</div>
         </div >
 

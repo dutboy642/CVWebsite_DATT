@@ -24,6 +24,8 @@
         "vite": "^5.0"
     },
     "dependencies": {
+        "flowbite": "^2.3.0",
+        "flowbite-react": "^0.9.0",
         "quill": "^2.0.0",
         "react-quill": "^2.0.0"
     }
