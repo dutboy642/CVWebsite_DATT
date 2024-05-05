@@ -20,7 +20,15 @@ Route::get('/dashboard', function () {
 
 Route::get('/CVEditor', function () {
     return Inertia::render('CVEditor');
+})->name('cvEditor');
+
+Route::get('/layout', function () {
+    return Inertia::render('Homepage');
 });
+
+Route::get('/home', function () {
+    return Inertia::render('Home');
+})->name('home');
 
 
 Route::middleware('auth')->group(function () {

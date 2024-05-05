@@ -1,20 +1,33 @@
 import { ComponentInstance } from "@/types";
 import { useState } from "react";
 import { position } from "@/types";
+import SmallMenuComponent from "./SmallMenuComponent";
 
 interface FrameComponentProps {
     dragStart: position
-    updateInstance: (id: string, updatedInstance: ComponentInstance) => void
+    updateInstance: (pageId: string, id: string, updatedInstance: ComponentInstance) => void
     instance: ComponentInstance
     setDragStart: (x: position) => void
     setCurrentClassesComponentFunction: (x: string) => void
+    deleteInstance: (pageId: string, id: string) => void
+    cloneInstance: (pageId: string, id: string) => void
+    scaleValue: number
+    pageId: string
+    displayMenu: number
+    setDisplayMenuFunction: (x: number) => void
 
 }
 
 const FrameComponent: React.FC<FrameComponentProps> = (props) => {
     const [SizeStart, setSizeStart] = useState({ width: 0, height: 0 });
+    const [positionStart, setPositionStart] = useState({ x: 0, y: 0 });
+    const [isInMenu, setIsInMenu] = useState(false);
+
     let resizeDirection = ""
 
+    const setIsInMenuFunction = (x: boolean) => {
+        setIsInMenu(x);
+    }
     const handleResize = (event: MouseEvent) => {
         event.preventDefault();
         event.stopPropagation();
@@ -24,29 +37,30 @@ const FrameComponent: React.FC<FrameComponentProps> = (props) => {
         let newY = props.instance.position.y;
         switch (resizeDirection) {
             case "right":
-                newWidth = SizeStart.width + (event.clientX - props.dragStart.x);
+                newWidth = SizeStart.width + (event.clientX - props.dragStart.x) / props.scaleValue * 100;
                 // alert("oke")
                 break;
             case "bottom":
-                newHeight = SizeStart.height + (event.clientY - props.dragStart.y);
+                newHeight = SizeStart.height + (event.clientY - props.dragStart.y) / props.scaleValue * 100;
 
                 break;
             case "left":
-                newWidth = SizeStart.width - (event.clientX - props.dragStart.x);
+                newWidth = SizeStart.width - (event.clientX - props.dragStart.x) / props.scaleValue * 100;
                 // setPosition({ x: position.x - (props.dragStart.x - event.clientX), y: position.y });
-                newX = newX - (props.dragStart.x - event.clientX)
+                newX = positionStart.x - (props.dragStart.x - event.clientX) / props.scaleValue * 100
                 break;
             case "top":
-                newHeight = SizeStart.height - (event.clientY - props.dragStart.y);
+                newHeight = SizeStart.height - (event.clientY - props.dragStart.y) / props.scaleValue * 100;
                 // setPosition({ x: position.x, y: position.y - (props.dragStart.y - event.clientY) });
-                newY = newY - (props.dragStart.y - event.clientY)
+                newY = positionStart.y - (props.dragStart.y - event.clientY) / props.scaleValue * 100
                 break;
         }
         //
         props.instance.position = { x: newX, y: newY };
         props.instance.size = { width: newWidth, height: newHeight };
-        // updateInstance(currentIDComponent, newInstance, textInstances, '')
         props.setDragStart({ x: event.clientX, y: event.clientY })
+        // props.updateInstance(props.instance.id, props.instance)
+
         return;
     };
 
@@ -65,6 +79,7 @@ const FrameComponent: React.FC<FrameComponentProps> = (props) => {
         props.setDragStart({ x: event.clientX, y: event.clientY });
         //Tim instance
         setSizeStart({ width: props.instance.size.width, height: props.instance.size.height });
+        setPositionStart({ x: props.instance.position.x, y: props.instance.position.y });
         resizeDirection = direction;
         // setCurrentIDComponent((event.target as HTMLDivElement).id.split(direction)[1])
         window.addEventListener("mousemove", handleResize);
@@ -75,50 +90,54 @@ const FrameComponent: React.FC<FrameComponentProps> = (props) => {
 
         event.dataTransfer.setData("text/plain", "component");
         event.dataTransfer.setData("Id", (event.target as HTMLDivElement).id);
+        event.dataTransfer.setData("pageId", props.pageId);
+
         // event.dataTransfer.setData("Id", event.target);
+        props.setDisplayMenuFunction(0)
         props.setCurrentClassesComponentFunction((event.target as HTMLDivElement).getAttribute("class") || "");
-        props.instance.isFocus = false;
-        props.updateInstance((event.target as HTMLDivElement).id, props.instance)
+        // props.instance.isFocus = false;
+        props.updateInstance(props.pageId, (event.target as HTMLDivElement).id, props.instance)
         props.setDragStart({ x: event.clientX, y: event.clientY });
     };
     return (
         <div
             id={props.instance.id}
-            className="absolute border border-gray-400/20 cursor-move p-2 hover:border-2 hover:border-gray-400 rounded"
+            className="absolute border border-gray-400 cursor-move p-2 hover:border-2 hover:border-gray-400 rounded"
             style={{
                 width: props.instance.size.width,
                 height: props.instance.size.height,
                 left: props.instance.position.x,
                 top: props.instance.position.y,
+                backgroundColor: props.instance.backgroundColor
             }}
             draggable="true"
-            onDragStart={handleDragStart}
+            onDragStart={(e) => handleDragStart(e)}
             onFocus={(event) => {
                 props.instance.isFocus = true;
-                props.updateInstance(props.instance.id, props.instance)
+                props.updateInstance(props.pageId, props.instance.id, props.instance)
             }}
             onBlur={(event) => {
-                props.instance.isFocus = false;
-                props.updateInstance(props.instance.id, props.instance)
+                if (isInMenu == false) {
+                    props.instance.isFocus = false;
+                    props.updateInstance(props.pageId, props.instance.id, props.instance)
+                }
 
             }}
             tabIndex={0}
         >
             {props.instance.isFocus &&
-                <div
-                    id={'menu' + props.instance.id}
-                    className=" absolute w-16 h-4 bg-black-500 border border-gray-500/80 cursor-pointer rounded"
-                    style={{ top: "0", right: "0px", transform: "translateY(-120%)" }}
-                    onMouseDown={(e) => handleResizeStart(e, "left")}
-                    onMouseMove={(e) => resizeDirection === "left" ? handleResize : undefined}
-                    onMouseUp={handleResizeEnd}
-                >
-                    <ul>
-                        <li>
-
-                        </li>
-                    </ul>
-                </div>
+                <SmallMenuComponent
+                    pageId={props.pageId}
+                    cloneInstance={props.cloneInstance}
+                    deleteInstance={props.deleteInstance}
+                    id={props.instance.id}
+                    updateInstance={props.updateInstance}
+                    instance={props.instance}
+                    displayMenu={props.displayMenu}
+                    setDisplayMenuFunction={props.setDisplayMenuFunction}
+                    isInMenu={isInMenu}
+                    setIsInMenuFunction={setIsInMenuFunction}
+                />
             }
 
             {props.instance.isFocus &&

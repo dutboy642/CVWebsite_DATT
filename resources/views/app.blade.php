@@ -20,5 +20,6 @@
     <body class="font-sans antialiased">
         @inertia
         <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.js"></script>
+        <script src="https://kit.fontawesome.com/df7e895264.js" crossorigin="anonymous"></script>
     </body>
 </html>

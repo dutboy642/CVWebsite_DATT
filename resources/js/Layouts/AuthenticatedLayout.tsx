@@ -28,7 +28,7 @@ export default function Authenticated({ user, header, children }: PropsWithChild
                             </div>
                         </div>
 
-                        <div className="hidden sm:flex sm:items-center sm:ms-6">
+                        {/* <div className="hidden sm:flex sm:items-center sm:ms-6">
                             <div className="ms-3 relative">
                                 <Dropdown>
                                     <Dropdown.Trigger>
@@ -63,9 +63,9 @@ export default function Authenticated({ user, header, children }: PropsWithChild
                                     </Dropdown.Content>
                                 </Dropdown>
                             </div>
-                        </div>
+                        </div> */}
 
-                        <div className="-me-2 flex items-center sm:hidden">
+                        {/* <div className="-me-2 flex items-center sm:hidden">
                             <button
                                 onClick={() => setShowingNavigationDropdown((previousState) => !previousState)}
                                 className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
@@ -87,11 +87,11 @@ export default function Authenticated({ user, header, children }: PropsWithChild
                                     />
                                 </svg>
                             </button>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 
-                <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
+                {/* <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                     <div className="pt-2 pb-3 space-y-1">
                         <ResponsiveNavLink href={route('dashboard')} active={route().current('dashboard')}>
                             Dashboard
@@ -113,14 +113,14 @@ export default function Authenticated({ user, header, children }: PropsWithChild
                             </ResponsiveNavLink>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </nav>
 
-            {header && (
+            {/* {header && (
                 <header className="bg-white shadow">
                     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">{header}</div>
                 </header>
-            )}
+            )} */}
 
             <main>{children}</main>
         </div>

@@ -10,6 +10,14 @@ interface ComponentInstance {
     position: { x: number; y: number };
     size: { width: number; height: number };
     isFocus: boolean;
+    pageId: string;
+    backgroundColor: string;
+}
+
+interface Page {
+    id: string;
+    frameInstanceList: ComponentInstance[];
+    textInstanceList: TextComponentInstance[];
 }
 
 interface position {
@@ -23,6 +31,7 @@ interface TextComponentInstance {
     size: { width: number; height: number };
     text: string;
     isFocus: boolean;
+    pageId: string;
 }
 
 export type PageProps<
